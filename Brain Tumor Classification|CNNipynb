@@ -1,0 +1,1717 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "8b2f15ac",
+   "metadata": {
+    "papermill": {
+     "duration": 0.012092,
+     "end_time": "2022-11-01T11:29:18.191313",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:18.179221",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "> ## 1. About the dataset\n",
+    "- **A brain tumor is a mass or growth of abnormal cells in the brain. There are different types of tumors:**\n",
+    "<br/>\n",
+    "1-Pituitary: Is an abnormal growth that develops in the pituitary gland.\n",
+    "<br/>\n",
+    "2- Meningioma: Is a tumor that arises from the meninges - the membranes that surround the brain.\n",
+    "<br/>\n",
+    "3- Glioma: Is a type of tumor that occurs in the brain and spinal cord.\n",
+    "- **The dataset has MRI scans to classify the brain tumors.**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "74d5d10f",
+   "metadata": {
+    "papermill": {
+     "duration": 0.009655,
+     "end_time": "2022-11-01T11:29:18.211346",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:18.201691",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "> ## 2. Importing the needed libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "12f15a6e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:18.236002Z",
+     "iopub.status.busy": "2022-11-01T11:29:18.235331Z",
+     "iopub.status.idle": "2022-11-01T11:29:29.155629Z",
+     "shell.execute_reply": "2022-11-01T11:29:29.153963Z"
+    },
+    "papermill": {
+     "duration": 10.937782,
+     "end_time": "2022-11-01T11:29:29.159102",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:18.221320",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import warnings \n",
+    "warnings.filterwarnings(\"ignore\")\n",
+    "import tensorflow as tf\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "import cv2 as cv\n",
+    "import numpy as np\n",
+    "from tensorflow.keras.preprocessing.image import ImageDataGenerator\n",
+    "from tensorflow.keras.preprocessing import image\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "import tensorflow.keras.layers as tfl\n",
+    "from keras.models import Sequential\n",
+    "from keras.layers import Flatten,Activation,Dense,Dropout,Conv2D,MaxPool2D\n",
+    "from tensorflow.keras.callbacks import EarlyStopping\n",
+    "from sklearn.metrics import classification_report, confusion_matrix\n",
+    "from mlxtend.plotting import plot_confusion_matrix"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "cef2417b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:29.181951Z",
+     "iopub.status.busy": "2022-11-01T11:29:29.181057Z",
+     "iopub.status.idle": "2022-11-01T11:29:29.187822Z",
+     "shell.execute_reply": "2022-11-01T11:29:29.186670Z"
+    },
+    "papermill": {
+     "duration": 0.021447,
+     "end_time": "2022-11-01T11:29:29.190647",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.169200",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "imgGen = ImageDataGenerator(rescale = 1/255)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "dd9d85f1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:29.215555Z",
+     "iopub.status.busy": "2022-11-01T11:29:29.214685Z",
+     "iopub.status.idle": "2022-11-01T11:29:29.444761Z",
+     "shell.execute_reply": "2022-11-01T11:29:29.443206Z"
+    },
+    "papermill": {
+     "duration": 0.247192,
+     "end_time": "2022-11-01T11:29:29.448319",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.201127",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Found 2870 images belonging to 4 classes.\n"
+     ]
+    }
+   ],
+   "source": [
+    "brainTumor=imgGen.flow_from_directory('../input/brain-tumor-classification-mri/Training')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4a08593c",
+   "metadata": {
+    "papermill": {
+     "duration": 0.01026,
+     "end_time": "2022-11-01T11:29:29.469319",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.459059",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "- **Our classification problem has 4 classes**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "31dc0e40",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:29.493728Z",
+     "iopub.status.busy": "2022-11-01T11:29:29.492437Z",
+     "iopub.status.idle": "2022-11-01T11:29:29.505654Z",
+     "shell.execute_reply": "2022-11-01T11:29:29.503721Z"
+    },
+    "papermill": {
+     "duration": 0.028191,
+     "end_time": "2022-11-01T11:29:29.508482",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.480291",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'glioma_tumor': 0, 'meningioma_tumor': 1, 'no_tumor': 2, 'pituitary_tumor': 3}"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#classes \n",
+    "brainTumor.class_indices"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5e63de95",
+   "metadata": {
+    "papermill": {
+     "duration": 0.010604,
+     "end_time": "2022-11-01T11:29:29.529583",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.518979",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "<hr>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d5c9733e",
+   "metadata": {
+    "papermill": {
+     "duration": 0.009971,
+     "end_time": "2022-11-01T11:29:29.549808",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.539837",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "> ## 3. Train & test datasets"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "fe040422",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:29.572910Z",
+     "iopub.status.busy": "2022-11-01T11:29:29.571945Z",
+     "iopub.status.idle": "2022-11-01T11:29:29.578159Z",
+     "shell.execute_reply": "2022-11-01T11:29:29.577021Z"
+    },
+    "papermill": {
+     "duration": 0.020787,
+     "end_time": "2022-11-01T11:29:29.580751",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.559964",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "tumorTestPath = \"../input/brain-tumor-classification-mri/Testing\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "88755c7e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:29.604820Z",
+     "iopub.status.busy": "2022-11-01T11:29:29.604039Z",
+     "iopub.status.idle": "2022-11-01T11:29:29.609853Z",
+     "shell.execute_reply": "2022-11-01T11:29:29.608938Z"
+    },
+    "papermill": {
+     "duration": 0.0207,
+     "end_time": "2022-11-01T11:29:29.612186",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.591486",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "tumorTrainPath = '../input/brain-tumor-classification-mri/Training'"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c1cd073b",
+   "metadata": {
+    "papermill": {
+     "duration": 0.009989,
+     "end_time": "2022-11-01T11:29:29.632506",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.622517",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "<hr/>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "314b199b",
+   "metadata": {
+    "papermill": {
+     "duration": 0.009886,
+     "end_time": "2022-11-01T11:29:29.652532",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.642646",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "> ## 4. Loading the dataset "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0e413cef",
+   "metadata": {
+    "papermill": {
+     "duration": 0.009964,
+     "end_time": "2022-11-01T11:29:29.672672",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.662708",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### 4.1 Loading the testing dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "7c096d31",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:29.695645Z",
+     "iopub.status.busy": "2022-11-01T11:29:29.694506Z",
+     "iopub.status.idle": "2022-11-01T11:29:29.700692Z",
+     "shell.execute_reply": "2022-11-01T11:29:29.699787Z"
+    },
+    "papermill": {
+     "duration": 0.020017,
+     "end_time": "2022-11-01T11:29:29.702887",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.682870",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "trainGen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "6000a225",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:29.726465Z",
+     "iopub.status.busy": "2022-11-01T11:29:29.725042Z",
+     "iopub.status.idle": "2022-11-01T11:29:29.840204Z",
+     "shell.execute_reply": "2022-11-01T11:29:29.838403Z"
+    },
+    "papermill": {
+     "duration": 0.129631,
+     "end_time": "2022-11-01T11:29:29.843192",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.713561",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Found 394 images belonging to 4 classes.\n"
+     ]
+    }
+   ],
+   "source": [
+    "tumorTest = trainGen.flow_from_directory(\n",
+    "        tumorTestPath,\n",
+    "        target_size=(200 , 200),\n",
+    "        batch_size=32)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3e57c02e",
+   "metadata": {
+    "papermill": {
+     "duration": 0.010005,
+     "end_time": "2022-11-01T11:29:29.863587",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.853582",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### 4.2 Loading the training dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "5b014fbb",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:29.887019Z",
+     "iopub.status.busy": "2022-11-01T11:29:29.886522Z",
+     "iopub.status.idle": "2022-11-01T11:29:30.111524Z",
+     "shell.execute_reply": "2022-11-01T11:29:30.110096Z"
+    },
+    "papermill": {
+     "duration": 0.241438,
+     "end_time": "2022-11-01T11:29:30.116035",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:29.874597",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Found 2870 images belonging to 4 classes.\n"
+     ]
+    }
+   ],
+   "source": [
+    "tumorTrain= trainGen.flow_from_directory(\n",
+    "        tumorTrainPath,  target_size=(200 , 200),\n",
+    "        batch_size=32)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6444349e",
+   "metadata": {
+    "papermill": {
+     "duration": 0.012588,
+     "end_time": "2022-11-01T11:29:30.139888",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:30.127300",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "<hr/>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9518d25a",
+   "metadata": {
+    "papermill": {
+     "duration": 0.0133,
+     "end_time": "2022-11-01T11:29:30.164466",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:30.151166",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "> ## 5. Modeling"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5891160c",
+   "metadata": {
+    "papermill": {
+     "duration": 0.011341,
+     "end_time": "2022-11-01T11:29:30.187501",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:30.176160",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### 5.1 First model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "dcef8cde",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:30.215456Z",
+     "iopub.status.busy": "2022-11-01T11:29:30.214501Z",
+     "iopub.status.idle": "2022-11-01T11:29:30.442163Z",
+     "shell.execute_reply": "2022-11-01T11:29:30.440342Z"
+    },
+    "papermill": {
+     "duration": 0.245375,
+     "end_time": "2022-11-01T11:29:30.445266",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:30.199891",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-11-01 11:29:30.267298: I tensorflow/core/common_runtime/process_util.cc:146] Creating new thread pool with default inter op setting: 2. Tune using inter_op_parallelism_threads for best performance.\n"
+     ]
+    }
+   ],
+   "source": [
+    "model1 =Sequential()\n",
+    "#convolution and maxpoollayer\n",
+    "model1.add(Conv2D(filters=10,kernel_size=3,\n",
+    "                input_shape=(200,200,3)))\n",
+    "model1.add(Activation('relu'))\n",
+    "model1.add(MaxPool2D(pool_size=2))\n",
+    "#flatten layer\n",
+    "model1.add(Flatten())\n",
+    "#hidden layer\n",
+    "model1.add(Dense(16))\n",
+    "model1.add(Activation('relu'))\n",
+    "#output layer\n",
+    "model1.add(Dense(4))\n",
+    "model1.add(Activation('sigmoid'))\n",
+    "model1.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "3a944070",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:29:30.472234Z",
+     "iopub.status.busy": "2022-11-01T11:29:30.470922Z",
+     "iopub.status.idle": "2022-11-01T11:35:25.550776Z",
+     "shell.execute_reply": "2022-11-01T11:35:25.549093Z"
+    },
+    "papermill": {
+     "duration": 355.163409,
+     "end_time": "2022-11-01T11:35:25.621571",
+     "exception": false,
+     "start_time": "2022-11-01T11:29:30.458162",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-11-01 11:29:31.013073: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:185] None of the MLIR Optimization Passes are enabled (registered 2)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/10\n",
+      "90/90 [==============================] - 37s 398ms/step - loss: 1.1902 - accuracy: 0.5805 - val_loss: 1.5516 - val_accuracy: 0.5558\n",
+      "Epoch 2/10\n",
+      "90/90 [==============================] - 22s 246ms/step - loss: 0.5696 - accuracy: 0.7920 - val_loss: 2.0056 - val_accuracy: 0.6041\n",
+      "Epoch 3/10\n",
+      "90/90 [==============================] - 22s 247ms/step - loss: 0.3449 - accuracy: 0.8815 - val_loss: 1.8126 - val_accuracy: 0.6980\n",
+      "Epoch 4/10\n",
+      "90/90 [==============================] - 23s 253ms/step - loss: 0.2143 - accuracy: 0.9422 - val_loss: 1.9250 - val_accuracy: 0.7335\n",
+      "Epoch 5/10\n",
+      "90/90 [==============================] - 22s 243ms/step - loss: 0.1452 - accuracy: 0.9672 - val_loss: 2.0748 - val_accuracy: 0.7640\n",
+      "Epoch 6/10\n",
+      "90/90 [==============================] - 23s 251ms/step - loss: 0.0915 - accuracy: 0.9861 - val_loss: 2.1431 - val_accuracy: 0.7665\n",
+      "Epoch 7/10\n",
+      "90/90 [==============================] - 22s 247ms/step - loss: 0.0655 - accuracy: 0.9902 - val_loss: 2.4676 - val_accuracy: 0.7766\n",
+      "Epoch 8/10\n",
+      "90/90 [==============================] - 22s 249ms/step - loss: 0.0447 - accuracy: 0.9941 - val_loss: 2.6362 - val_accuracy: 0.7640\n",
+      "Epoch 9/10\n",
+      "90/90 [==============================] - 22s 245ms/step - loss: 0.0333 - accuracy: 0.9983 - val_loss: 2.7572 - val_accuracy: 0.7766\n",
+      "Epoch 10/10\n",
+      "90/90 [==============================] - 22s 249ms/step - loss: 0.0211 - accuracy: 0.9993 - val_loss: 3.0505 - val_accuracy: 0.7766\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<keras.callbacks.History at 0x7f2b34fd5790>"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#training the model\n",
+    "early_stop = EarlyStopping(monitor=\"val_loss\", patience = 3)\n",
+    "model1.fit_generator(tumorTrain, validation_data=tumorTest,epochs=10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "7cdac3aa",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:35:25.757498Z",
+     "iopub.status.busy": "2022-11-01T11:35:25.756500Z",
+     "iopub.status.idle": "2022-11-01T11:35:28.100400Z",
+     "shell.execute_reply": "2022-11-01T11:35:28.098148Z"
+    },
+    "papermill": {
+     "duration": 2.416257,
+     "end_time": "2022-11-01T11:35:28.103430",
+     "exception": false,
+     "start_time": "2022-11-01T11:35:25.687173",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[3.0505008697509766, 0.7766497731208801]"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#model evaluation\n",
+    "model1.evaluate_generator(tumorTest)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7fa9cce0",
+   "metadata": {
+    "papermill": {
+     "duration": 0.067282,
+     "end_time": "2022-11-01T11:35:28.238059",
+     "exception": false,
+     "start_time": "2022-11-01T11:35:28.170777",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "- **Model 1 has accuracy of 0.6396.** \n",
+    "<hr/>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9d5998be",
+   "metadata": {
+    "papermill": {
+     "duration": 0.068187,
+     "end_time": "2022-11-01T11:35:28.374770",
+     "exception": false,
+     "start_time": "2022-11-01T11:35:28.306583",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### 5.2 Second Model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "c35e8212",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:35:28.513567Z",
+     "iopub.status.busy": "2022-11-01T11:35:28.512546Z",
+     "iopub.status.idle": "2022-11-01T11:35:28.657558Z",
+     "shell.execute_reply": "2022-11-01T11:35:28.655445Z"
+    },
+    "papermill": {
+     "duration": 0.220552,
+     "end_time": "2022-11-01T11:35:28.661850",
+     "exception": false,
+     "start_time": "2022-11-01T11:35:28.441298",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "model2 =Sequential()\n",
+    "#3convolution layers and 1 maxpoollayer\n",
+    "model2.add(Conv2D(filters=25,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model2.add(Activation('relu'))\n",
+    "\n",
+    "model2.add(Conv2D(filters=25,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model2.add(Activation('relu'))\n",
+    "\n",
+    "model2.add(Conv2D(filters=25,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model2.add(Activation('relu'))\n",
+    "\n",
+    "model2.add(MaxPool2D(pool_size=2))\n",
+    "#flatten layer\n",
+    "model2.add(Flatten())\n",
+    "#Deeeper hidden layer\n",
+    "model2.add(Dense(50))\n",
+    "model2.add(Activation('relu'))\n",
+    "#output layer\n",
+    "model2.add(Dense(4))\n",
+    "model2.add(Activation('sigmoid'))\n",
+    "model2.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "ca0c394b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T11:35:28.810318Z",
+     "iopub.status.busy": "2022-11-01T11:35:28.809905Z",
+     "iopub.status.idle": "2022-11-01T12:12:48.899070Z",
+     "shell.execute_reply": "2022-11-01T12:12:48.897587Z"
+    },
+    "papermill": {
+     "duration": 2240.295548,
+     "end_time": "2022-11-01T12:12:49.031269",
+     "exception": false,
+     "start_time": "2022-11-01T11:35:28.735721",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/10\n",
+      "90/90 [==============================] - 226s 2s/step - loss: 1.0424 - accuracy: 0.5425 - val_loss: 2.1854 - val_accuracy: 0.3173\n",
+      "Epoch 2/10\n",
+      "90/90 [==============================] - 225s 3s/step - loss: 0.5980 - accuracy: 0.7631 - val_loss: 1.8090 - val_accuracy: 0.5203\n",
+      "Epoch 3/10\n",
+      "90/90 [==============================] - 223s 2s/step - loss: 0.3850 - accuracy: 0.8502 - val_loss: 1.7558 - val_accuracy: 0.5635\n",
+      "Epoch 4/10\n",
+      "90/90 [==============================] - 222s 2s/step - loss: 0.2197 - accuracy: 0.9167 - val_loss: 2.2624 - val_accuracy: 0.5838\n",
+      "Epoch 5/10\n",
+      "90/90 [==============================] - 224s 2s/step - loss: 0.1359 - accuracy: 0.9564 - val_loss: 2.6308 - val_accuracy: 0.6396\n",
+      "Epoch 6/10\n",
+      "90/90 [==============================] - 224s 2s/step - loss: 0.0777 - accuracy: 0.9770 - val_loss: 3.7912 - val_accuracy: 0.6472\n",
+      "Epoch 7/10\n",
+      "90/90 [==============================] - 224s 2s/step - loss: 0.0690 - accuracy: 0.9777 - val_loss: 4.1014 - val_accuracy: 0.6650\n",
+      "Epoch 8/10\n",
+      "90/90 [==============================] - 224s 2s/step - loss: 0.0589 - accuracy: 0.9822 - val_loss: 3.9727 - val_accuracy: 0.6472\n",
+      "Epoch 9/10\n",
+      "90/90 [==============================] - 224s 2s/step - loss: 0.0546 - accuracy: 0.9836 - val_loss: 5.2734 - val_accuracy: 0.6751\n",
+      "Epoch 10/10\n",
+      "90/90 [==============================] - 223s 2s/step - loss: 0.0585 - accuracy: 0.9819 - val_loss: 5.4400 - val_accuracy: 0.6751\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<keras.callbacks.History at 0x7f2b340df190>"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#training the model\n",
+    "model2.fit_generator(tumorTrain, validation_data=tumorTest,epochs=10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "8278dc3b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T12:12:49.294085Z",
+     "iopub.status.busy": "2022-11-01T12:12:49.293667Z",
+     "iopub.status.idle": "2022-11-01T12:12:56.677740Z",
+     "shell.execute_reply": "2022-11-01T12:12:56.676861Z"
+    },
+    "papermill": {
+     "duration": 7.517889,
+     "end_time": "2022-11-01T12:12:56.680595",
+     "exception": false,
+     "start_time": "2022-11-01T12:12:49.162706",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[5.439958572387695, 0.6751269102096558]"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#model evaluation\n",
+    "model2.evaluate_generator(tumorTest)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "345deeda",
+   "metadata": {
+    "papermill": {
+     "duration": 0.13492,
+     "end_time": "2022-11-01T12:12:56.950830",
+     "exception": false,
+     "start_time": "2022-11-01T12:12:56.815910",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "<hr/>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3d98bb55",
+   "metadata": {
+    "papermill": {
+     "duration": 0.134412,
+     "end_time": "2022-11-01T12:12:57.222057",
+     "exception": false,
+     "start_time": "2022-11-01T12:12:57.087645",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### 5.3 Third model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "2a34a4af",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T12:12:57.492205Z",
+     "iopub.status.busy": "2022-11-01T12:12:57.491533Z",
+     "iopub.status.idle": "2022-11-01T12:12:57.592235Z",
+     "shell.execute_reply": "2022-11-01T12:12:57.591112Z"
+    },
+    "papermill": {
+     "duration": 0.24107,
+     "end_time": "2022-11-01T12:12:57.595410",
+     "exception": false,
+     "start_time": "2022-11-01T12:12:57.354340",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "model3 =Sequential()\n",
+    "#4convolution layers and 2 maxpoollayer\n",
+    "model3.add(Conv2D(filters=32,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model3.add(Activation('relu'))\n",
+    "\n",
+    "model3.add(Conv2D(filters=32,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model3.add(Activation('relu'))\n",
+    "\n",
+    "model3.add(MaxPool2D(pool_size=3))\n",
+    "\n",
+    "model3.add(Conv2D(filters=25,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model3.add(Activation('relu'))\n",
+    "\n",
+    "model3.add(Conv2D(filters=25,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model3.add(Activation('relu'))\n",
+    "\n",
+    "model3.add(MaxPool2D(pool_size=3))\n",
+    "#flatten layer\n",
+    "model3.add(Flatten())\n",
+    "#Deeeper hidden layer\n",
+    "model3.add(Dense(25))\n",
+    "model3.add(Activation('relu'))\n",
+    "#output layer\n",
+    "model3.add(Dense(4))\n",
+    "model3.add(Activation('sigmoid'))\n",
+    "model3.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "9bc03da1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T12:12:57.867797Z",
+     "iopub.status.busy": "2022-11-01T12:12:57.867018Z",
+     "iopub.status.idle": "2022-11-01T12:41:47.102059Z",
+     "shell.execute_reply": "2022-11-01T12:41:47.100872Z"
+    },
+    "papermill": {
+     "duration": 1729.550408,
+     "end_time": "2022-11-01T12:41:47.278393",
+     "exception": false,
+     "start_time": "2022-11-01T12:12:57.727985",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/10\n",
+      "90/90 [==============================] - 171s 2s/step - loss: 0.9793 - accuracy: 0.5707 - val_loss: 2.5268 - val_accuracy: 0.3731\n",
+      "Epoch 2/10\n",
+      "90/90 [==============================] - 170s 2s/step - loss: 0.6361 - accuracy: 0.7338 - val_loss: 1.9228 - val_accuracy: 0.5076\n",
+      "Epoch 3/10\n",
+      "90/90 [==============================] - 169s 2s/step - loss: 0.4449 - accuracy: 0.8223 - val_loss: 2.0960 - val_accuracy: 0.5635\n",
+      "Epoch 4/10\n",
+      "90/90 [==============================] - 169s 2s/step - loss: 0.2971 - accuracy: 0.8934 - val_loss: 1.9612 - val_accuracy: 0.6574\n",
+      "Epoch 5/10\n",
+      "90/90 [==============================] - 170s 2s/step - loss: 0.2240 - accuracy: 0.9160 - val_loss: 2.2325 - val_accuracy: 0.6751\n",
+      "Epoch 6/10\n",
+      "90/90 [==============================] - 170s 2s/step - loss: 0.1271 - accuracy: 0.9544 - val_loss: 2.8376 - val_accuracy: 0.6853\n",
+      "Epoch 7/10\n",
+      "90/90 [==============================] - 169s 2s/step - loss: 0.1036 - accuracy: 0.9638 - val_loss: 3.4695 - val_accuracy: 0.6827\n",
+      "Epoch 8/10\n",
+      "90/90 [==============================] - 170s 2s/step - loss: 0.0815 - accuracy: 0.9700 - val_loss: 3.2921 - val_accuracy: 0.7081\n",
+      "Epoch 9/10\n",
+      "90/90 [==============================] - 169s 2s/step - loss: 0.0381 - accuracy: 0.9871 - val_loss: 4.4006 - val_accuracy: 0.7411\n",
+      "Epoch 10/10\n",
+      "90/90 [==============================] - 169s 2s/step - loss: 0.0255 - accuracy: 0.9913 - val_loss: 4.9060 - val_accuracy: 0.7386\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<keras.callbacks.History at 0x7f2b14724850>"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#training the model\n",
+    "model3.fit_generator(tumorTrain, validation_data=tumorTest,epochs=10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "697b44c3",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T12:41:47.640797Z",
+     "iopub.status.busy": "2022-11-01T12:41:47.639878Z",
+     "iopub.status.idle": "2022-11-01T12:41:53.551783Z",
+     "shell.execute_reply": "2022-11-01T12:41:53.550469Z"
+    },
+    "papermill": {
+     "duration": 6.098254,
+     "end_time": "2022-11-01T12:41:53.554882",
+     "exception": false,
+     "start_time": "2022-11-01T12:41:47.456628",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[4.906042575836182, 0.7385786771774292]"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#model evaluation\n",
+    "model3.evaluate_generator(tumorTest)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "71a006cb",
+   "metadata": {
+    "papermill": {
+     "duration": 0.19288,
+     "end_time": "2022-11-01T12:41:54.048815",
+     "exception": false,
+     "start_time": "2022-11-01T12:41:53.855935",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "<hr/>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fde6e4b6",
+   "metadata": {
+    "papermill": {
+     "duration": 0.178237,
+     "end_time": "2022-11-01T12:41:54.422736",
+     "exception": false,
+     "start_time": "2022-11-01T12:41:54.244499",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### 5.4 Forth Model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "62182134",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T12:41:54.783191Z",
+     "iopub.status.busy": "2022-11-01T12:41:54.782629Z",
+     "iopub.status.idle": "2022-11-01T12:41:54.926276Z",
+     "shell.execute_reply": "2022-11-01T12:41:54.925170Z"
+    },
+    "papermill": {
+     "duration": 0.327026,
+     "end_time": "2022-11-01T12:41:54.928711",
+     "exception": false,
+     "start_time": "2022-11-01T12:41:54.601685",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "model4 =Sequential()\n",
+    "#4convolution layers and 2 maxpoollayer\n",
+    "model4.add(Conv2D(filters=32,kernel_size=5,input_shape=(200,200,3)))\n",
+    "model4.add(Activation('relu'))\n",
+    "\n",
+    "model4.add(Conv2D(filters=32,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model4.add(Activation('relu'))\n",
+    "\n",
+    "model4.add(MaxPool2D(pool_size=3))\n",
+    "\n",
+    "model4.add(Conv2D(filters=25,kernel_size=3,input_shape=(200,200,3)))\n",
+    "model4.add(Activation('relu'))\n",
+    "\n",
+    "model4.add(Conv2D(filters=25,kernel_size=2,input_shape=(200,200,3)))\n",
+    "model4.add(Activation('relu'))\n",
+    "\n",
+    "model4.add(MaxPool2D(pool_size=3))\n",
+    "#flatten layer\n",
+    "model4.add(Flatten())\n",
+    "#Deeeper hidden layer\n",
+    "model4.add(Dense(250))\n",
+    "model4.add(Activation('relu'))\n",
+    "#output layer\n",
+    "model4.add(Dense(4))\n",
+    "model4.add(Activation('sigmoid'))\n",
+    "model4.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "4b0b2236",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T12:41:55.317045Z",
+     "iopub.status.busy": "2022-11-01T12:41:55.315027Z",
+     "iopub.status.idle": "2022-11-01T13:23:07.614213Z",
+     "shell.execute_reply": "2022-11-01T13:23:07.612539Z"
+    },
+    "papermill": {
+     "duration": 2472.493752,
+     "end_time": "2022-11-01T13:23:07.616870",
+     "exception": false,
+     "start_time": "2022-11-01T12:41:55.123118",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/15\n",
+      "90/90 [==============================] - 166s 2s/step - loss: 0.9591 - accuracy: 0.5815 - val_loss: 2.1428 - val_accuracy: 0.4365\n",
+      "Epoch 2/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.5953 - accuracy: 0.7613 - val_loss: 2.3323 - val_accuracy: 0.5279\n",
+      "Epoch 3/15\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.3494 - accuracy: 0.8638 - val_loss: 2.2786 - val_accuracy: 0.6675\n",
+      "Epoch 4/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.2541 - accuracy: 0.9059 - val_loss: 2.0765 - val_accuracy: 0.6827\n",
+      "Epoch 5/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.1492 - accuracy: 0.9449 - val_loss: 3.0664 - val_accuracy: 0.7538\n",
+      "Epoch 6/15\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.0790 - accuracy: 0.9725 - val_loss: 3.5287 - val_accuracy: 0.7107\n",
+      "Epoch 7/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0707 - accuracy: 0.9770 - val_loss: 3.7341 - val_accuracy: 0.6624\n",
+      "Epoch 8/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0477 - accuracy: 0.9854 - val_loss: 4.4040 - val_accuracy: 0.7741\n",
+      "Epoch 9/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0195 - accuracy: 0.9944 - val_loss: 5.0368 - val_accuracy: 0.7716\n",
+      "Epoch 10/15\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.0651 - accuracy: 0.9794 - val_loss: 3.1863 - val_accuracy: 0.7411\n",
+      "Epoch 11/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0316 - accuracy: 0.9916 - val_loss: 4.5096 - val_accuracy: 0.7411\n",
+      "Epoch 12/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0275 - accuracy: 0.9916 - val_loss: 5.1233 - val_accuracy: 0.7563\n",
+      "Epoch 13/15\n",
+      "90/90 [==============================] - 166s 2s/step - loss: 0.0229 - accuracy: 0.9930 - val_loss: 5.7125 - val_accuracy: 0.7386\n",
+      "Epoch 14/15\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.0116 - accuracy: 0.9969 - val_loss: 5.9565 - val_accuracy: 0.7589\n",
+      "Epoch 15/15\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0117 - accuracy: 0.9958 - val_loss: 5.7575 - val_accuracy: 0.7513\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<keras.callbacks.History at 0x7f2b141656d0>"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#training the model\n",
+    "model4.fit_generator(tumorTrain, validation_data=tumorTest,epochs=15)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "aca43dc8",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T13:23:08.259293Z",
+     "iopub.status.busy": "2022-11-01T13:23:08.258514Z",
+     "iopub.status.idle": "2022-11-01T13:23:13.977189Z",
+     "shell.execute_reply": "2022-11-01T13:23:13.975823Z"
+    },
+    "papermill": {
+     "duration": 6.016997,
+     "end_time": "2022-11-01T13:23:13.979920",
+     "exception": false,
+     "start_time": "2022-11-01T13:23:07.962923",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[5.757464408874512, 0.7512690424919128]"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#model evaluation\n",
+    "model4.evaluate_generator(tumorTest)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "51132040",
+   "metadata": {
+    "papermill": {
+     "duration": 0.277269,
+     "end_time": "2022-11-01T13:23:14.545619",
+     "exception": false,
+     "start_time": "2022-11-01T13:23:14.268350",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "<hr/>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4fe028ba",
+   "metadata": {
+    "papermill": {
+     "duration": 0.295716,
+     "end_time": "2022-11-01T13:23:15.139330",
+     "exception": false,
+     "start_time": "2022-11-01T13:23:14.843614",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### 5.5 Fifth model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "afedbf6a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T13:23:15.846687Z",
+     "iopub.status.busy": "2022-11-01T13:23:15.845978Z",
+     "iopub.status.idle": "2022-11-01T13:23:15.851802Z",
+     "shell.execute_reply": "2022-11-01T13:23:15.850780Z"
+    },
+    "papermill": {
+     "duration": 0.419087,
+     "end_time": "2022-11-01T13:23:15.854404",
+     "exception": false,
+     "start_time": "2022-11-01T13:23:15.435317",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from tensorflow.keras.optimizers import SGD"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "37da014b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T13:23:16.437901Z",
+     "iopub.status.busy": "2022-11-01T13:23:16.437122Z",
+     "iopub.status.idle": "2022-11-01T13:23:16.547509Z",
+     "shell.execute_reply": "2022-11-01T13:23:16.546201Z"
+    },
+    "papermill": {
+     "duration": 0.402645,
+     "end_time": "2022-11-01T13:23:16.550752",
+     "exception": false,
+     "start_time": "2022-11-01T13:23:16.148107",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "model5 =Sequential()\n",
+    "#4convolution layers and 2 maxpoollayer\n",
+    "model5.add(Conv2D(filters=32,kernel_size=5,input_shape=(200,200,3)))\n",
+    "model5.add(Activation('relu'))\n",
+    "\n",
+    "model5.add(Conv2D(filters=32,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model5.add(Activation('relu'))\n",
+    "\n",
+    "model5.add(MaxPool2D(pool_size=3))\n",
+    "\n",
+    "model5.add(Conv2D(filters=25,kernel_size=3,input_shape=(200,200,3)))\n",
+    "model5.add(Activation('relu'))\n",
+    "\n",
+    "model5.add(Conv2D(filters=25,kernel_size=2,input_shape=(200,200,3)))\n",
+    "model5.add(Activation('relu'))\n",
+    "\n",
+    "model5.add(MaxPool2D(pool_size=3))\n",
+    "#flatten layer\n",
+    "model5.add(Flatten())\n",
+    "#hidden layer\n",
+    "model5.add(Dense(150))\n",
+    "model5.add(Activation('relu'))\n",
+    "#output layer\n",
+    "model5.add(Dense(4))\n",
+    "model5.add(Activation('softmax'))\n",
+    "opt = SGD(learning_rate = 0.001, momentum = 0.9)\n",
+    "model5.compile(optimizer=opt,loss='categorical_crossentropy',metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "8a9b4d9f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T13:23:17.144526Z",
+     "iopub.status.busy": "2022-11-01T13:23:17.144036Z",
+     "iopub.status.idle": "2022-11-01T14:34:58.863961Z",
+     "shell.execute_reply": "2022-11-01T14:34:58.862710Z"
+    },
+    "papermill": {
+     "duration": 4302.022801,
+     "end_time": "2022-11-01T14:34:58.866272",
+     "exception": false,
+     "start_time": "2022-11-01T13:23:16.843471",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/25\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 1.2859 - accuracy: 0.4188 - val_loss: 1.8821 - val_accuracy: 0.2741\n",
+      "Epoch 2/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 1.0080 - accuracy: 0.5763 - val_loss: 2.0306 - val_accuracy: 0.2893\n",
+      "Epoch 3/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.8583 - accuracy: 0.6460 - val_loss: 2.1793 - val_accuracy: 0.3350\n",
+      "Epoch 4/25\n",
+      "90/90 [==============================] - 169s 2s/step - loss: 0.7352 - accuracy: 0.7052 - val_loss: 2.0255 - val_accuracy: 0.4289\n",
+      "Epoch 5/25\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.6520 - accuracy: 0.7338 - val_loss: 2.6071 - val_accuracy: 0.4365\n",
+      "Epoch 6/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.5672 - accuracy: 0.7822 - val_loss: 2.7942 - val_accuracy: 0.5076\n",
+      "Epoch 7/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.5560 - accuracy: 0.7840 - val_loss: 2.6559 - val_accuracy: 0.5025\n",
+      "Epoch 8/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.4840 - accuracy: 0.8098 - val_loss: 3.3933 - val_accuracy: 0.5178\n",
+      "Epoch 9/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.4295 - accuracy: 0.8418 - val_loss: 3.2514 - val_accuracy: 0.5609\n",
+      "Epoch 10/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.3412 - accuracy: 0.8721 - val_loss: 3.4450 - val_accuracy: 0.6168\n",
+      "Epoch 11/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.2941 - accuracy: 0.8948 - val_loss: 3.2301 - val_accuracy: 0.6117\n",
+      "Epoch 12/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.2919 - accuracy: 0.8941 - val_loss: 3.4280 - val_accuracy: 0.6193\n",
+      "Epoch 13/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.2193 - accuracy: 0.9167 - val_loss: 4.2699 - val_accuracy: 0.6117\n",
+      "Epoch 14/25\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.1878 - accuracy: 0.9314 - val_loss: 4.9143 - val_accuracy: 0.7107\n",
+      "Epoch 15/25\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.1713 - accuracy: 0.9422 - val_loss: 4.9603 - val_accuracy: 0.7005\n",
+      "Epoch 16/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.1244 - accuracy: 0.9582 - val_loss: 5.6277 - val_accuracy: 0.7056\n",
+      "Epoch 17/25\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0859 - accuracy: 0.9718 - val_loss: 6.1899 - val_accuracy: 0.7030\n",
+      "Epoch 18/25\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0603 - accuracy: 0.9843 - val_loss: 6.5969 - val_accuracy: 0.7360\n",
+      "Epoch 19/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.0455 - accuracy: 0.9878 - val_loss: 6.7292 - val_accuracy: 0.7259\n",
+      "Epoch 20/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.0373 - accuracy: 0.9885 - val_loss: 7.4305 - val_accuracy: 0.6827\n",
+      "Epoch 21/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.0718 - accuracy: 0.9777 - val_loss: 7.6250 - val_accuracy: 0.7208\n",
+      "Epoch 22/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.0301 - accuracy: 0.9930 - val_loss: 7.8896 - val_accuracy: 0.7208\n",
+      "Epoch 23/25\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0379 - accuracy: 0.9913 - val_loss: 7.0795 - val_accuracy: 0.6751\n",
+      "Epoch 24/25\n",
+      "90/90 [==============================] - 165s 2s/step - loss: 0.0326 - accuracy: 0.9906 - val_loss: 7.7874 - val_accuracy: 0.7132\n",
+      "Epoch 25/25\n",
+      "90/90 [==============================] - 164s 2s/step - loss: 0.0210 - accuracy: 0.9944 - val_loss: 8.5130 - val_accuracy: 0.7284\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<keras.callbacks.History at 0x7f2b0dfcca50>"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#training the model\n",
+    "model5.fit_generator(tumorTrain, validation_data=tumorTest,epochs=25)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "a7afac91",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T14:34:59.752147Z",
+     "iopub.status.busy": "2022-11-01T14:34:59.751333Z",
+     "iopub.status.idle": "2022-11-01T14:35:05.571984Z",
+     "shell.execute_reply": "2022-11-01T14:35:05.570417Z"
+    },
+    "papermill": {
+     "duration": 6.271895,
+     "end_time": "2022-11-01T14:35:05.574662",
+     "exception": false,
+     "start_time": "2022-11-01T14:34:59.302767",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[8.512993812561035, 0.7284263968467712]"
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#model evaluation\n",
+    "model5.evaluate_generator(tumorTest)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fe861d63",
+   "metadata": {
+    "papermill": {
+     "duration": 0.565085,
+     "end_time": "2022-11-01T14:35:06.580976",
+     "exception": false,
+     "start_time": "2022-11-01T14:35:06.015891",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "<hr/>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4a0dbde4",
+   "metadata": {
+    "papermill": {
+     "duration": 0.438494,
+     "end_time": "2022-11-01T14:35:07.472210",
+     "exception": false,
+     "start_time": "2022-11-01T14:35:07.033716",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "### 5.6 Sixth Model: With batch normalization"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "b3ea34c6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T14:35:08.356384Z",
+     "iopub.status.busy": "2022-11-01T14:35:08.355725Z",
+     "iopub.status.idle": "2022-11-01T14:35:08.584606Z",
+     "shell.execute_reply": "2022-11-01T14:35:08.583508Z"
+    },
+    "papermill": {
+     "duration": 0.672114,
+     "end_time": "2022-11-01T14:35:08.587607",
+     "exception": false,
+     "start_time": "2022-11-01T14:35:07.915493",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from keras.layers import BatchNormalization\n",
+    "model6 =Sequential()\n",
+    "#4convolution layers and 2 maxpoollayer\n",
+    "model6.add(Conv2D(filters=32,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model6.add(Activation('relu'))\n",
+    "model6.add(BatchNormalization())\n",
+    "\n",
+    "model6.add(Conv2D(filters=32,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model6.add(Activation('relu'))\n",
+    "model6.add(BatchNormalization())\n",
+    "\n",
+    "model6.add(MaxPool2D(pool_size=3))\n",
+    "model6.add(Dropout(0.2))\n",
+    "\n",
+    "model6.add(Conv2D(filters=25,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model6.add(Activation('relu'))\n",
+    "model6.add(BatchNormalization())\n",
+    "\n",
+    "model6.add(Conv2D(filters=25,kernel_size=4,input_shape=(200,200,3)))\n",
+    "model6.add(Activation('relu'))\n",
+    "model6.add(BatchNormalization())\n",
+    "\n",
+    "model6.add(MaxPool2D(pool_size=3))\n",
+    "model6.add(Dropout(0.3))\n",
+    "\n",
+    "model6.add(Conv2D(filters=25,kernel_size=3,input_shape=(200,200,3)))\n",
+    "model6.add(Activation('relu'))\n",
+    "model6.add(BatchNormalization())\n",
+    "\n",
+    "model6.add(Conv2D(filters=25,kernel_size=3,input_shape=(200,200,3)))\n",
+    "model6.add(Activation('relu'))\n",
+    "model6.add(BatchNormalization())\n",
+    "\n",
+    "model6.add(MaxPool2D(pool_size=3))\n",
+    "model6.add(Dropout(0.4))\n",
+    "#flatten layer\n",
+    "model6.add(Flatten())\n",
+    "#Deeeper hidden layer\n",
+    "model6.add(Dense(100))\n",
+    "model6.add(BatchNormalization())\n",
+    "model6.add(Dropout(0.5))\n",
+    "model6.add(Activation('relu'))\n",
+    "#output layer\n",
+    "model6.add(Dense(4))\n",
+    "model6.add(Activation('sigmoid'))\n",
+    "model6.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "ca5acb04",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T14:35:09.484208Z",
+     "iopub.status.busy": "2022-11-01T14:35:09.483831Z",
+     "iopub.status.idle": "2022-11-01T15:58:25.237284Z",
+     "shell.execute_reply": "2022-11-01T15:58:25.236104Z"
+    },
+    "papermill": {
+     "duration": 4996.2058,
+     "end_time": "2022-11-01T15:58:25.240235",
+     "exception": false,
+     "start_time": "2022-11-01T14:35:09.034435",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Epoch 1/25\n",
+      "90/90 [==============================] - 201s 2s/step - loss: 1.2249 - accuracy: 0.5296 - val_loss: 2.3710 - val_accuracy: 0.1878\n",
+      "Epoch 2/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.8504 - accuracy: 0.6690 - val_loss: 2.8828 - val_accuracy: 0.1878\n",
+      "Epoch 3/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.7295 - accuracy: 0.7108 - val_loss: 3.0515 - val_accuracy: 0.2056\n",
+      "Epoch 4/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.6164 - accuracy: 0.7557 - val_loss: 2.7337 - val_accuracy: 0.2462\n",
+      "Epoch 5/25\n",
+      "90/90 [==============================] - 198s 2s/step - loss: 0.5590 - accuracy: 0.7861 - val_loss: 2.9293 - val_accuracy: 0.2538\n",
+      "Epoch 6/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.5209 - accuracy: 0.8049 - val_loss: 1.9969 - val_accuracy: 0.3934\n",
+      "Epoch 7/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.4647 - accuracy: 0.8195 - val_loss: 1.8706 - val_accuracy: 0.4112\n",
+      "Epoch 8/25\n",
+      "90/90 [==============================] - 198s 2s/step - loss: 0.4252 - accuracy: 0.8345 - val_loss: 1.7932 - val_accuracy: 0.5609\n",
+      "Epoch 9/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.4238 - accuracy: 0.8456 - val_loss: 1.6798 - val_accuracy: 0.5406\n",
+      "Epoch 10/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.3986 - accuracy: 0.8505 - val_loss: 1.7103 - val_accuracy: 0.5152\n",
+      "Epoch 11/25\n",
+      "90/90 [==============================] - 198s 2s/step - loss: 0.3681 - accuracy: 0.8634 - val_loss: 1.6837 - val_accuracy: 0.5939\n",
+      "Epoch 12/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.3375 - accuracy: 0.8760 - val_loss: 1.5432 - val_accuracy: 0.6193\n",
+      "Epoch 13/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.3159 - accuracy: 0.8829 - val_loss: 1.8768 - val_accuracy: 0.4594\n",
+      "Epoch 14/25\n",
+      "90/90 [==============================] - 200s 2s/step - loss: 0.3134 - accuracy: 0.8774 - val_loss: 1.8928 - val_accuracy: 0.5863\n",
+      "Epoch 15/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.3175 - accuracy: 0.8840 - val_loss: 2.6552 - val_accuracy: 0.4137\n",
+      "Epoch 16/25\n",
+      "90/90 [==============================] - 200s 2s/step - loss: 0.2903 - accuracy: 0.8882 - val_loss: 2.4391 - val_accuracy: 0.5127\n",
+      "Epoch 17/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.2888 - accuracy: 0.8930 - val_loss: 1.8718 - val_accuracy: 0.6041\n",
+      "Epoch 18/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.2555 - accuracy: 0.9059 - val_loss: 1.7800 - val_accuracy: 0.5330\n",
+      "Epoch 19/25\n",
+      "90/90 [==============================] - 199s 2s/step - loss: 0.2674 - accuracy: 0.9014 - val_loss: 2.0167 - val_accuracy: 0.5990\n",
+      "Epoch 20/25\n",
+      "90/90 [==============================] - 200s 2s/step - loss: 0.2438 - accuracy: 0.9080 - val_loss: 2.1994 - val_accuracy: 0.6802\n",
+      "Epoch 21/25\n",
+      "90/90 [==============================] - 201s 2s/step - loss: 0.2255 - accuracy: 0.9167 - val_loss: 1.9177 - val_accuracy: 0.5406\n",
+      "Epoch 22/25\n",
+      "90/90 [==============================] - 201s 2s/step - loss: 0.2134 - accuracy: 0.9226 - val_loss: 1.6180 - val_accuracy: 0.6523\n",
+      "Epoch 23/25\n",
+      "90/90 [==============================] - 201s 2s/step - loss: 0.2275 - accuracy: 0.9178 - val_loss: 2.3063 - val_accuracy: 0.5787\n",
+      "Epoch 24/25\n",
+      "90/90 [==============================] - 202s 2s/step - loss: 0.2191 - accuracy: 0.9164 - val_loss: 1.7927 - val_accuracy: 0.5736\n",
+      "Epoch 25/25\n",
+      "90/90 [==============================] - 201s 2s/step - loss: 0.1837 - accuracy: 0.9303 - val_loss: 1.6809 - val_accuracy: 0.6396\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "<keras.callbacks.History at 0x7f2b0dc49c90>"
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#training the model\n",
+    "model6.fit_generator(tumorTrain, validation_data=tumorTest,epochs=25)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "f916414c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-11-01T15:58:26.501567Z",
+     "iopub.status.busy": "2022-11-01T15:58:26.500818Z",
+     "iopub.status.idle": "2022-11-01T15:58:33.094129Z",
+     "shell.execute_reply": "2022-11-01T15:58:33.092984Z"
+    },
+    "papermill": {
+     "duration": 7.210316,
+     "end_time": "2022-11-01T15:58:33.096793",
+     "exception": false,
+     "start_time": "2022-11-01T15:58:25.886477",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[1.6809372901916504, 0.6395938992500305]"
+      ]
+     },
+     "execution_count": 28,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#model evaluation\n",
+    "model6.evaluate_generator(tumorTest)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.12"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 16170.639163,
+   "end_time": "2022-11-01T15:58:36.544098",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2022-11-01T11:29:05.904935",
+   "version": "2.3.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
